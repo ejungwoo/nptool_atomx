@@ -1,0 +1,14 @@
+## Reading of the detector macros is here:
+$NPTOOL/NPSimulation/Core/DetectorConstruction.* +147
+
+## Actar detector construction source
+NPSimulation/Detectors/Actar/Actar.*
+
+## Material manager (list of materials you can use in the macros file)
+$NPTOOL/NPSimulation/Core/MaterialManager.*
+
+## Option manager
+/root/nptool/NPLib/Core/NPOptionManager.* +103 
+
+## Reading Reaction for Two body reaction
+$NPTOOL/NPLib/Physics/NPReaction.* +473 
