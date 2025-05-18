@@ -1,15 +1,8 @@
 {
-    for (TString path : {
-            TString(gSystem->Getenv("NPLib_DIR"))+"/lib/libNPPhysics",
-            TString(gSystem->Getenv("NPLib_DIR"))+"/lib/libNPActar"
-            }) {
-        cout << path << " " << gSystem -> Load(path) << endl;
-    }
-
-    TString libString = TString(gSystem->Getenv("LILAK_PATH"))+"/build/libLILAK";
-    int loadv = gSystem -> Load(libString);
-    if      (loadv== 0) cout << "LILAK" << endl;
-    else if (loadv== 1) cout << "LILAK (already loaded)" << endl;
-    else if (loadv==-1) cout << "ERROR: Cannot Load LILAK from " << libString << endl;
-    else if (loadv==-2) cout << "ERROR: LILAK version miss match!" << libString << endl;
+    TString lib1 = TString(gSystem->Getenv("NPLib_DIR"))+"/lib/libNPPhysics";
+    TString lib2 = TString(gSystem->Getenv("NPLib_DIR"))+"/lib/libNPActar";
+    TString libL = TString(gSystem->Getenv("LILAK_PATH"))+"/build/libLILAK";
+    cout << lib1 << " " << (gSystem->Load(lib1)==0?"Good":"Bad") << endl;
+    cout << lib2 << " " << (gSystem->Load(lib2)==0?"Good":"Bad") << endl;
+    cout << libL << " " << (gSystem->Load(libL)==0?"Good":"Bad") << endl;
 }

@@ -1,0 +1,66 @@
+macros_simulation : geant4 simulation
+macros_analysis : analysis macros using geant4 simulation output file
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+# how I created ATOMX
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+1. use nptool-wizard to create the project
+
+nptool-wizard
+********************************************************************************
+********************************* nptool wizard ********************************
+********************************************************************************
+           This utility will create a new detector skeleton
+-> What is the detector name ?
+ATOMX
+-> What is your name (firstname and surname)?
+jungwoo
+-> What is your email?
+phyjics@gmail.com
+         List of created files to edit :
+         NPLib :
+                 -> Folder: Detectors/ATOMX
+                 -> Data Class:  TATOMXData.h  and  TATOMXData.cxx
+                 -> Physics Class:  TATOMXPhysics.h  and  TATOMXPhysics.cxx
+                 -> Spectra Class:  TATOMXSpectra.h and TATOMXSpectra.cxx
+
+        NPSimulation :
+                 -> Folder: Detectors/ATOMX
+                 -> Detector Class: ATOMX.hh and ATOMX.cc
+
+        Projects :
+                 -> Folder: Detectors/ATOMX
+                 -> Detector Analysis:  Analysis.h and Analysis.cxx
+                 -> Detector input file:  ATOMX.detector
+
+-> Do you want to add those files to the nptool repository ? (y/n) n
+
+**** For help editing those files visit http://nptool.org/manual/adding-detectors ****
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+2. recompile npl and nps
+
+npl
+make clean
+cmake .
+make -j10
+cmake install
+nps
+make clean
+cmake .
+make -j10
+cmake install
+
+This will add ATOMX to /root/nptool/NPLib/ClassList.txt and to the lib (...?)
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+3. 

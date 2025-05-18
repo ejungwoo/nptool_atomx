@@ -11,7 +11,7 @@ void read_simulation()
 
     simulation_tree st(tree);
     Long64_t nentries = st.fChain->GetEntriesFast();
-    nentries = 4;
+    nentries = 20;
     for (Long64_t jentry=0; jentry<nentries; jentry++)
     {
         Long64_t ientry = st.LoadTree(jentry);
@@ -22,6 +22,7 @@ void read_simulation()
         cout << ientry << " " << numParticles << endl;
         for (auto iParticle=0; iParticle<numParticles; ++iParticle)
         {
+            int id = st.TrackInfo -> fTI_Index[iParticle];
             TString name = st.TrackInfo -> fTI_Particle_Name[iParticle];
             TString producedVolume = st.TrackInfo -> fTI_Volume_Name[iParticle];
             double kin    = st.TrackInfo -> fTI_Kinetic_Energy[iParticle];
@@ -38,7 +39,7 @@ void read_simulation()
                          st.TrackInfo -> fTI_PositionZ[iParticle]);
 
             //hist -> Fill(pos.x(),pos.y()) << endl;
-            cout << "   " << name << " " << producedVolume << " " << kin << " " << brho << endl;
+            cout << "   " << id << " " << name << " " << producedVolume << " " << kin << " " << brho << endl;
             //mom.Print();
             //pos.Print();
         }
