@@ -6,3 +6,5 @@ ATOMX
     GasFraction= 97 3
     Temperature= 295 kelvin
     Pressure= 0.1 bar
+    #ReactionZ= 100 101
+    ReactionZ= 200 220

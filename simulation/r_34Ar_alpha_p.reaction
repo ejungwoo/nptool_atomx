@@ -22,7 +22,7 @@ TwoBodyReaction
     Heavy= 37K
     ExcitationEnergyLight= 0.0 MeV
     ExcitationEnergyHeavy= 0.0 MeV
-    CrossSectionPath= ATOMX_flat.txt CS
+    CrossSectionPath= x_flat.txt CS
     HalfOpenAngleMin= 100 deg 
     HalfOpenAngleMax= 180 deg 
     ShootLight= 1

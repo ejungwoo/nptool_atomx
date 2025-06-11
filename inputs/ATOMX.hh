@@ -65,6 +65,7 @@ class ATOMX : public NPS::VDetector{
     private:
         G4LogicalVolume* m_Detector;
         G4LogicalVolume* m_logicGas;
+        G4LogicalVolume* m_sensitive;
 
         ////////////////////////////////////////////////////
         //////  Inherite from NPS::VDetector class /////////
@@ -115,6 +116,9 @@ class ATOMX : public NPS::VDetector{
         vector<int> m_GasFraction;
         double m_Pressure; // bar
         double m_Temperature; // kelvin
+        double m_ReactionZ1 = 0;
+        double m_ReactionZ2 = 0;
+        double m_ReactionZWidth = 0;
 
         // Visualisation Attribute
         G4VisAttributes* m_VisChamber;
@@ -126,6 +130,7 @@ class ATOMX : public NPS::VDetector{
     private:
         // Region were reaction can occure:
         G4Region* m_ReactionRegion;
+        G4Region* m_StepLimitRegion;
         vector<G4VFastSimulationModel*> m_ReactionModel;
 
     public:

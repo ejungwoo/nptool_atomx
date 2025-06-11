@@ -47,7 +47,6 @@
 
 // NPTool header
 #include "ATOMX.hh"
-#include "CalorimeterScorers.hh"
 #include "InteractionScorers.hh"
 #include "RootOutput.h"
 #include "MaterialManager.hh"
@@ -62,11 +61,8 @@ using namespace CLHEP;
 
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-namespace ATOMX_NS{
-    // Energy and time Resolution
-    const double EnergyThreshold = 0.1*MeV;
-    const double ResoTime = 4.5*ns ;
-    const double ResoEnergy = 1.0*MeV ;
+namespace ATOMX_NS
+{
     const double XATChamber = 1000*mm ;
     const double YATChamber = 1000*mm ;
     const double ZATChamber = 1000*mm ;
@@ -74,17 +70,17 @@ namespace ATOMX_NS{
     const double Mylar_Rmax = 3.5 * cm;
     const double Mylar_Thickness = 7 * micrometer;
 
-    const double XGasVolume = 1000. * mm;
-    const double YGasVolume = 1000. * mm;
-    const double ZGasVolume = 1000. * mm;
+    const double XGasVolume = 800. * mm;
+    const double YGasVolume = 800. * mm;
+    const double ZGasVolume = 800. * mm;
 
-    const double XPadVolume = 800. * mm;
+    const double XPadVolume = 600. * mm;
     const double YPadVolume = 2.   * mm;
-    const double ZPadVolume = 800. * mm;
+    const double ZPadVolume = 600. * mm;
 
-    const double XMMSVolume = 800. * mm;
+    const double XMMSVolume = 600. * mm;
     const double YMMSVolume = 220. * mm;
-    const double ZMMSVolume = 800. * mm;
+    const double ZMMSVolume = 600. * mm;
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -104,6 +100,7 @@ ATOMX::ATOMX(){
     m_VisPads -> SetForceWireframe(true);
 
     m_ReactionRegion = NULL;
+    m_StepLimitRegion = NULL;
 }
 
 ATOMX::~ATOMX(){
@@ -129,6 +126,10 @@ void ATOMX::AddDetector(double  R, double  Theta, double  Phi, string  Shape){
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 G4LogicalVolume* ATOMX::BuildDetector()
 {
+    bool limitReactionZ = (m_ReactionZWidth>0);
+    if (limitReactionZ)
+        jw_cout << "Limiting sensitive region : " << m_ReactionZ1 << " -> " << m_ReactionZ2 << endl;
+
     G4Material* Cu = MaterialManager::getInstance()->GetMaterialFromLibrary("Cu");
     G4Material* Al = MaterialManager::getInstance()->GetMaterialFromLibrary("Al");
     G4Material* Mylar = MaterialManager::getInstance()->GetMaterialFromLibrary("Mylar");
@@ -140,6 +141,9 @@ G4LogicalVolume* ATOMX::BuildDetector()
         G4Box* sGas        = new G4Box("ATOMX_Gas", ATOMX_NS::XGasVolume * 0.5, ATOMX_NS::YGasVolume * 0.5, ATOMX_NS::ZGasVolume * 0.5);
         G4Box* sPad        = new G4Box("ATOMX_Pad", ATOMX_NS::XPadVolume * 0.5, ATOMX_NS::YPadVolume * 0.5, ATOMX_NS::ZPadVolume * 0.5);
         G4Box* sMMS        = new G4Box("ATOMX_MMS", ATOMX_NS::XMMSVolume * 0.5, ATOMX_NS::YMMSVolume * 0.5, ATOMX_NS::ZMMSVolume * 0.5);
+        G4Box* sSen        = nullptr;
+        if (limitReactionZ)
+            sSen = new G4Box("ATOMX_Sen", ATOMX_NS::XGasVolume * 0.5, ATOMX_NS::YGasVolume * 0.5, m_ReactionZWidth * 0.5);
 
         unsigned const int NumberOfGasMix = m_GasMaterial.size();
 
@@ -174,12 +178,16 @@ G4LogicalVolume* ATOMX::BuildDetector()
 
         m_Detector = new G4LogicalVolume(sChamber, GasMaterial, "logic_ATOMX_Box", 0, 0, 0);
         m_logicGas = new G4LogicalVolume(sGas, DriftGasMaterial, "logic_Gas", 0, 0, 0);
+        if (limitReactionZ)
+            m_sensitive = new G4LogicalVolume(sSen, DriftGasMaterial, "logic_SensitiveGas", 0, 0, 0);
         G4LogicalVolume* logicPad = new G4LogicalVolume(sPad, Cu, "logic_Pad", 0, 0, 0);
         G4LogicalVolume* logicMMS = new G4LogicalVolume(sMMS, Al, "logic_MMS", 0, 0, 0);
         G4LogicalVolume* logicWindows = new G4LogicalVolume(sWindows, Mylar, "logic_Windows", 0, 0, 0);
 
         G4RotationMatrix* Rot = new G4RotationMatrix();
         new G4PVPlacement(G4Transform3D(*Rot, G4ThreeVector(0, 0, 0)), m_logicGas, "ATOMXGas", m_Detector, false, 0);
+        if (limitReactionZ)
+            new G4PVPlacement(G4Transform3D(*Rot, G4ThreeVector(0, 0, -0.5*ATOMX_NS::ZGasVolume + 0.5*(m_ReactionZ1+m_ReactionZ2))), m_sensitive, "ATOMXSensitiveGas", m_logicGas, false, 0);
         new G4PVPlacement(G4Transform3D(*Rot, G4ThreeVector(0, ATOMX_NS::YGasVolume * 0.5, 0)), logicPad, "ATOMXPad", m_logicGas, false, 0);
 
         //G4ElectricField* field = new G4UniformElectricField(G4ThreeVector(0.0, -70 * volt / cm, 0.0));
@@ -195,7 +203,10 @@ G4LogicalVolume* ATOMX::BuildDetector()
         //G4ChordFinder* ChordFinder = new G4ChordFinder(IntgrDriver);
         //FieldManager->SetChordFinder(ChordFinder);
 
-        logicPad -> SetSensitiveDetector(m_ATOMXScorer);
+        m_logicGas -> SetSensitiveDetector(m_ATOMXScorer);
+        if (limitReactionZ)
+            m_sensitive -> SetSensitiveDetector(m_ATOMXScorer);
+        //m_logicGas -> SetUserLimits(new G4UserLimits(0.1*mm, 10*m));
 
         m_Detector  -> SetVisAttributes(m_VisChamber);
         m_logicGas  -> SetVisAttributes(m_VisGas);
@@ -219,13 +230,14 @@ void ATOMX::ReadConfiguration(NPL::InputParser parser){
     if(NPOptionManager::getInstance()->GetVerboseLevel())
         cout << "//// " << blocks.size() << " detectors found " << endl; 
 
-    vector<string> cartSquare = {"POS", "Shape", "GasMaterial", "GasFraction", "Temperature", "Pressure"};
+    vector<string> cartSquare = {"POS", "Shape", "GasMaterial", "GasFraction", "Temperature", "Pressure", "ReactionZ"};
 
     for(unsigned int i = 0 ; i < blocks.size() ; i++){
         if(blocks[i]->HasTokenList(cartSquare)){
             if(NPOptionManager::getInstance()->GetVerboseLevel())
                 cout << endl << "////  ATOMX " << i+1 <<  endl;
 
+            //
             G4ThreeVector Pos = NPS::ConvertVector(blocks[i]->GetTVector3("POS","mm"));
             string Shape = blocks[i]->GetString("Shape");
 
@@ -238,9 +250,24 @@ void ATOMX::ReadConfiguration(NPL::InputParser parser){
             }
             m_Temperature = blocks[i]->GetDouble("Temperature", "kelvin");
             m_Pressure = blocks[i]->GetDouble("Pressure", "bar");
-            //
 
+            //
             AddDetector(Pos,Shape);
+
+            //
+            vector<int> vReactionZ = blocks[i]->GetVectorInt("ReactionZ");
+            m_ReactionZ1 = vReactionZ[0];
+            m_ReactionZ2 = vReactionZ[1];
+            if (m_ReactionZ2==m_ReactionZ1) {
+                continue;
+            }
+            else {
+                if (m_ReactionZ2<m_ReactionZ1) {
+                    m_ReactionZ1 = vReactionZ[1];
+                    m_ReactionZ2 = vReactionZ[0];
+                }
+                m_ReactionZWidth = m_ReactionZ2 - m_ReactionZ1;
+            }
         }
         else{
             cout << "ERROR: check your input file formatting " << endl;
@@ -284,12 +311,19 @@ void ATOMX::ConstructDetector(G4LogicalVolume* world){
     }
     if (!m_ReactionRegion) {
         G4ProductionCuts* ecut = new G4ProductionCuts();
-        ecut->SetProductionCut(1000, "e-");
+        //ecut->SetProductionCut(0.1 * mm, "e-");
+        ecut->SetProductionCut(1000 * mm, "e-");
 
         m_ReactionRegion = new G4Region("NPSimulationProcess");
         m_ReactionRegion->SetProductionCuts(ecut);
-        m_ReactionRegion->AddRootLogicalVolume(m_logicGas);
-        m_ReactionRegion->SetUserLimits(new G4UserLimits(1.2 * mm));
+        m_ReactionRegion->SetUserLimits(new G4UserLimits(0.1 * mm));
+        if (m_ReactionZWidth>0) {
+            m_ReactionRegion->AddRootLogicalVolume(m_sensitive);
+            G4UserLimits* limits = new G4UserLimits(0.1 * mm);
+            m_logicGas -> SetUserLimits(limits);
+        }
+        else
+            m_ReactionRegion->AddRootLogicalVolume(m_logicGas);
 
         G4Region* Region_cut = new G4Region("RegionCut");
         Region_cut->SetProductionCuts(ecut);
@@ -324,29 +358,27 @@ void ATOMX::InitializeRootOutput()
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 // Read sensitive part and fill the Root tree.
 // Called at in the EventAction::EndOfEventAvtion
-void ATOMX::ReadSensitive(const G4Event* ){
+void ATOMX::ReadSensitive(const G4Event*)
+{
     m_Event->Clear();
 
-    ///////////
-    // Calorimeter scorer
-    CalorimeterScorers::PS_Calorimeter* Scorer= (CalorimeterScorers::PS_Calorimeter*) m_ATOMXScorer->GetPrimitive(0);
+    InteractionScorers::PS_Interactions* interaction = (InteractionScorers::PS_Interactions*) m_ATOMXScorer->GetPrimitive(0);
 
-    unsigned int size = Scorer->GetMult(); 
-    for(unsigned int i = 0 ; i < size ; i++){
-        vector<unsigned int> level = Scorer->GetLevel(i); 
-        double Energy = RandGauss::shoot(Scorer->GetEnergy(i),ATOMX_NS::ResoEnergy);
-        if(Energy>ATOMX_NS::EnergyThreshold){
-            double Time = RandGauss::shoot(Scorer->GetTime(i),ATOMX_NS::ResoTime);
-            int DetectorNbr = level[0];
-            m_Event->SetEnergy(DetectorNbr,Energy);
-            m_Event->SetTime(DetectorNbr,Time); 
-        }
+    unsigned int size = interaction -> GetMult(); 
+    for (unsigned int i=0; i<size; i++)
+    {
+        TVector3 Position(interaction->GetPositionX(i), interaction->GetPositionY(i), interaction->GetPositionZ(i));
+        m_Event->fEnergyLoss.push_back(interaction -> GetEnergy(i));
+        //if (i<20) jw_cout << "t(" << i << ")=" << interaction -> GetTime(i) << endl;
+        m_Event->fTime.push_back(interaction -> GetTime(i));
+        m_Event->fPosition.push_back(Position);
     }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 ////////////////////////////////////////////////////////////////   
-void ATOMX::InitializeScorers() { 
+void ATOMX::InitializeScorers()
+{
     // This check is necessary in case the geometry is reloaded
     bool already_exist = false; 
     m_ATOMXScorer = CheckScorer("ATOMXScorer",already_exist) ;
@@ -356,10 +388,8 @@ void ATOMX::InitializeScorers() {
 
     // Otherwise the scorer is initialised
     vector<int> level; level.push_back(0);
-    G4VPrimitiveScorer* Calorimeter= new CalorimeterScorers::PS_Calorimeter("Calorimeter",level, 0) ;
     G4VPrimitiveScorer* Interaction= new InteractionScorers::PS_Interactions("Interaction",ms_InterCoord, 0) ;
     //and register it to the multifunctionnal detector
-    m_ATOMXScorer->RegisterPrimitive(Calorimeter);
     m_ATOMXScorer->RegisterPrimitive(Interaction);
     G4SDManager::GetSDMpointer()->AddNewDetector(m_ATOMXScorer) ;
 }

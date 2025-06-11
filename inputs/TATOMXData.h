@@ -1,42 +1,53 @@
-#ifndef Analysis_h 
-#define Analysis_h
+#ifndef __ATOMXDATA__
+#define __ATOMXDATA__
 /*****************************************************************************
- * Copyright (C) 2009-2016    this file is part of the NPTool Project        *
+ * Copyright (C) 2009-2025   this file is part of the NPTool Project       *
  *                                                                           *
  * For the licensing terms see $NPTOOL/Licence/NPTool_Licence                *
  * For the list of contributors see $NPTOOL/Licence/Contributors             *
  *****************************************************************************/
 
 /*****************************************************************************
- * Original Author: XAUTHORX  contact address: XMAILX                        *
+ * Original Author: jungwoo  contact address: phyjics@gmail.com                        *
  *                                                                           *
- * Creation Date  : XMONTHX XYEARX                                           *
+ * Creation Date  : May 2025                                           *
  * Last update    :                                                          *
  *---------------------------------------------------------------------------*
  * Decription:                                                               *
- *  This class describe  ATOMX analysis project                       *
+ *  This class hold ATOMX Raw data                                    *
  *                                                                           *
  *---------------------------------------------------------------------------*
  * Comment:                                                                  *
+ *                                                                           *   
  *                                                                           *
  *****************************************************************************/
 
-#include"NPVAnalysis.h"
-#include"TATOMXPhysics.h"
-class Analysis: public NPL::VAnalysis{
-  public:
-    Analysis();
-    ~Analysis();
+// STL
+#include <vector>
+using namespace std;
 
-  public: 
-    void Init();
-    void TreatEvent();
-    void End();
+// ROOT
+#include "TObject.h"
+#include "TVector3.h"
 
-   static NPL::VAnalysis* Construct();
+class TATOMXData : public TObject
+{
+    public: 
+        std::vector<double> fEnergyLoss;
+        std::vector<double> fTime;
+        std::vector<TVector3> fPosition;
+        int GetEnergyLossMultiplicity() const { return fEnergyLoss.size(); }
 
-  private:
-   TATOMXPhysics* ATOMX;
+    public: 
+        TATOMXData();
+        ~TATOMXData();
 
+    public:
+        void Clear();
+        void Clear(const Option_t*) {};
+        void Dump() const;
+
+        ClassDef(TATOMXData,1)
 };
+
 #endif

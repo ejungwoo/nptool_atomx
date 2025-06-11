@@ -1,0 +1,14 @@
+# run with viewer using geant4_viewer.mac
+./sim_viewer.sh
+
+# run without viewer using geant4_run.mac
+./sim_run.sh
+
+# input files
+- ATOMX.detector: Detector settings read by ATOMX.cc
+- r_34Ar_alpha_p.reaction: Reaction
+- x_flat.txt : Cross section
+- PhysicsListOption.txt
+- geant4_run.mac: Geant4 macro for sim_run
+- geant4_viewer.mac: Geant4 macro for sim_viewer
+- project.config: File paths
