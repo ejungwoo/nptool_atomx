@@ -107,12 +107,12 @@ def make_atomx():
         pos_xyz = det_par[1]
         rot_xyz = det_par[2]
         print(f"""
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% X6 ({i})
-    STARK
-        Type = {det_type}
-        POS = {pos_xyz[0]} {pos_xyz[1]} {pos_xyz[2]} mm
-        RotateXYZ = {rot_xyz[0]} {rot_xyz[1]} {rot_xyz[2]} deg""", file=detector_file)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% X6 ({i})
+STARK
+    Type = {det_type}
+    POS = {pos_xyz[0]} {pos_xyz[1]} {pos_xyz[2]} mm
+    RotateXYZ = {rot_xyz[0]} {rot_xyz[1]} {rot_xyz[2]} deg""", file=detector_file)
 
     return detector_file_name
 
@@ -201,7 +201,7 @@ def make_cs_file_with_angle_limit(cs_file_name, angle1, angle2):
 ######################################################
 def make_p_elastic(particle_name, energy, cs_file_name = "flat.txt", z_emission=-1000, sigma_energy=0, sigma_theta=0, sigma_x=0, sigma_y=0):
     reaction_conf_name = f"{particle_name}_elastic"
-    reaction_file_name = f"input/{reaction_conf_name}.reac"
+    reaction_file_name = f"input/{reaction_conf_name}.reaction"
     reaction_file = open(reaction_file_name,'w')
     print(reaction_file_name)
     content = f"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -237,7 +237,7 @@ TwoBodyReaction
 ######################################################
 def make_isotropic(particle_name, energy1, energy2, angle1, angle2, z0=0, sz=0):
     reaction_conf_name = f"{particle_name}_e{energy1}_{energy2}_a{angle1}_{angle2}_z{z0}"
-    reaction_file_name = f"input/isotropic_{reaction_conf_name}.reac"
+    reaction_file_name = f"input/isotropic_{reaction_conf_name}.reaction"
     reaction_file = open(reaction_file_name,'w')
     print(reaction_file_name)
     content = f"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -288,18 +288,18 @@ def make_script(name):
     return batch_file, viewer_file
 
 ######################################################
-def make_write_script(name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim="#", macro_for_ana="#"):
+def make_write_script(name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim="#", macro_for_ana="#", nbeams=100000):
     batch_file, viewer_file = make_script(name)
-    add_script(batch_file, viewer_file, name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim, macro_for_ana)
+    add_script(batch_file, viewer_file, name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim, macro_for_ana, nbeams)
     return batch_file.name
 
 ######################################################
-def add_script(batch_file, viewer_file, name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim="#", macro_for_ana="#"):
+def add_script(batch_file, viewer_file, name, detector_file_name, reaction_file_name, reaction_conf_name, macro_for_sim="#", macro_for_ana="#", nbeams=100000):
     sim_file_name = f"stark_{name}.{reaction_conf_name}.sim.root"
     ana_file_name = f"stark_{name}.{reaction_conf_name}.ana.root"
     vwr_file_name = f"stark_{name}.{reaction_conf_name}.viewer.root"
     content_b = f"""tee > geant4_batch.mac <<EOF
-/run/beamOn 100000
+/run/beamOn {nbeams}
 EOF\n
 npsimulation --record-track -D {detector_file_name} -E {reaction_file_name} -O {sim_file_name} -B geant4_batch.mac
 npanalysis -T data/{sim_file_name} SimulatedTree -O {ana_file_name}
@@ -319,13 +319,13 @@ if __name__ == "__main__":
 
     detector_file_name = make_atomx()
 
-    #################################################################################################
+    nbeams=100000
     nz = 20
     z1 = -140
     z2 = +140
     dz = (z2-z1)/nz
     sz = dz/6
-    all_batch = open("all_batch","w")
+    all_batch = open("all_batch.sh","w")
     for iz in range(nz):
         print()
         z0 = z1 + dz*iz
@@ -333,6 +333,6 @@ if __name__ == "__main__":
         det_file = detector_file_name
         batch_file, viewer_file = make_script(name)
         reaction, conf = make_isotropic(particle_name="proton", energy1=15, energy2=15, angle1=0, angle2=180, z0=z0, sz=sz)
-        batch_name = make_write_script(name, det_file, reaction, conf, macro_for_ana="root -q -b draw_summary.C")
+        batch_name = make_write_script(name, det_file, reaction, conf, macro_for_ana="root -q -b draw_hit.C", nbeams=nbeams)
         print(f"sh {batch_name}",file=all_batch)
     print(all_batch.name)
