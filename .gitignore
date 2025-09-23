@@ -46,3 +46,15 @@ trash/
 __pycache__
 .AppleDouble
 .DS_Store
+.ls_return
+
+*.detector
+
+geometrical_efficiency/data/*
+geometrical_efficiency/input/*
+geometrical_efficiency/figures/*
+geometrical_efficiency/*sh
+geometrical_efficiency/*mac
+!geometrical_efficiency/clean.sh
+!geometrical_efficiency/project.config
+!geometrical_efficiency/geant4_vis.mac

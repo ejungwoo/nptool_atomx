@@ -1,5 +1,0 @@
-calculate geomtrical efficiency of atomx si arrays as a functions of reaction-z
-
-python3 make_scripts.py # create simulation scripts
-sh all_batch.sh # run all simulations (20)
-root draw_summary.C # draw efficiency summary plot

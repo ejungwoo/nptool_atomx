@@ -1,1 +1,0 @@
-/root/nptool/NPSimulation/Core/DetectorConstruction.cc
