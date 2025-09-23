@@ -59,7 +59,7 @@ geometrical_efficiency/*mac
 !geometrical_efficiency/project.config
 !geometrical_efficiency/geant4_vis.mac
 
-SimulatedTree*
+ASimulatedTree.*
 batch_*.sh
 viewer_*.sh
 PhysicsListOption.txt
@@ -68,3 +68,4 @@ input/*.reaction
 input/*.detector
 input/geant4*.mac
 clean.sh
+rootlogon.C

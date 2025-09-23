@@ -1,4 +1,4 @@
-#include "SimulatedTree.C"
+#include "ASimulatedTree.C"
 
 void read_simulation(TString inputFileName="data/ATOMX_34Ar.sim.root")
 {
@@ -6,7 +6,7 @@ void read_simulation(TString inputFileName="data/ATOMX_34Ar.sim.root")
 
     auto file = new TFile(inputFileName);
     auto tree = (TTree*) file -> Get("SimulatedTree");
-    auto st = new SimulatedTree(tree);
+    auto st = new ASimulatedTree(tree);
     auto numEvents = tree -> GetEntries();
 
     if (test) {
@@ -14,11 +14,17 @@ void read_simulation(TString inputFileName="data/ATOMX_34Ar.sim.root")
         numEvents = 1;
     }
 
-    auto histZX = new TH2D("hist_atomx_zx",";z;x",200,-250,250,200,-250,250);
-    auto histELoss = new TH1D("hist_atomx_eloss",";energy loss",200,0,1);
-    auto FillATOMX = [histZX,histELoss](double energy, double time, TVector3 position) {
+    auto histZX = new TH2D("hist_atomx_zx",";z (mm);x (mm)",200,-250,250,200,-250,250);
+    auto histZY = new TH2D("hist_atomx_zy",";z (mm);y (mm)",200,-250,250,200,-200,200);
+    auto histELoss = new TH1D("hist_atomx_eloss",";energy loss (MeV)",200,0,0.2);
+    auto histZELoss = new TH2D("hist_atomx_zeloss",";z (mm);energy loss (MeV)",200,-250,250,200,0,0.2);
+    auto FillATOMX = [histZY,histZX,histELoss,histZELoss](double energy, double time, TVector3 position) {
         histZX -> Fill(position.z(),position.x());
-        histELoss -> Fill(energy);
+        histZY -> Fill(position.z(),position.y());
+        if (energy>0) {
+            histELoss -> Fill(energy);
+            histZELoss -> Fill(position.z(),energy);
+        }
     };
 
     for (auto iEvent=0; iEvent<numEvents; ++iEvent)
@@ -33,6 +39,7 @@ void read_simulation(TString inputFileName="data/ATOMX_34Ar.sim.root")
             cout << "numTracks = " << numTracks << endl;
             cout << "numSTARK  = " << numSTARK  << endl;
             cout << "numATOMX  = " << numATOMX  << endl;
+            cout << endl; st -> ReactionConditions -> Dump();
             cout << endl; st -> TrackInfo -> Dump();
             cout << endl; st -> STARK -> Dump();
             cout << endl; st -> ATOMX -> Dump(20);
@@ -71,6 +78,11 @@ void read_simulation(TString inputFileName="data/ATOMX_34Ar.sim.root")
         }
     }
 
-    new TCanvas(); histZX -> Draw("colz");
-    new TCanvas(); histELoss -> Draw();
+    auto cvs = new TCanvas("cvs","",1500,1000);
+    cvs -> Divide(2,2);
+    cvs -> cd(1)->SetLogz(); histZX -> Draw("colz");
+    cvs -> cd(2)->SetLogz(); histZY -> Draw("colz");
+    cvs -> cd(3); histELoss -> Draw();
+    cvs -> cd(4)->SetLogz(); histZELoss -> Draw("colz");
+    cvs -> SaveAs("figures/ATOMX_34Ar_read_simulation_example.png");
 }

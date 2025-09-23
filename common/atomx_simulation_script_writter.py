@@ -10,6 +10,7 @@ class atomx_simulation_script_writter:
 - def make_detector_file(self, detector_file_name="", make_gas=True, make_si_side=True, make_si_downstream=True, make_si_corner=True, make_si_bottom=True, make_csi=True):
 - def make_eventgen_file_beam(self, beam_particle, energy, eventgen_name="", z_emission=-1000, sigma_energy=0, sigma_theta=0, sigma_x=0, sigma_y=0):
 - def make_eventgen_file_isotropic(self, particle_name, energy1, energy2, angle1, angle2, z0=0, sz=0, eventgen_name)
+- def make_cs_file_flat(self, angle1, angle2)
 - def make_cs_file_gaus(self, mean, sigma)
 - def make_cs_file_from_data(self, cs_file_name, angle1, angle2)
 - def add_eventgen_elastic(self, reaction_file, beam_particle, target, heavy, light, ex_energy_light, ex_energy_heavy, cs_file_name = "flat.txt"):
@@ -193,6 +194,17 @@ STARK
 
         return detector_file
 
+    def make_cs_file_flat(self, angle1, angle2):
+        cs_file_name = f"{self.input_path}/flat_{angle1}_{angle2}.txt"
+        print("-- creating", cs_file_name)
+        cs_file = open(cs_file_name,'w')
+        for i in range(0, 1800):
+            x = i/10
+            value = 1 if (x>=angle1 and x<angle2) else 0
+            cs_file.write(f"{x}\t{value}\n")
+        cs_file.write(f"180 0")
+        return cs_file_name
+
     def make_cs_file_gaus(self, mean, sigma):
         cs_file_name = f"{self.input_path}/gaus_{mean}_{sigma}.txt"
         print("-- creating", cs_file_name)
@@ -333,7 +345,7 @@ npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}"
         if run_make_class_tree:
             print(f"""
 echo root -l -q -b -e '((TTree*)(new TFile("{self.data_path}/{sim_file_name}"))->Get("SimulatedTree"))->MakeClass();'
-root -l -q -b -e '((TTree*)(new TFile("{self.data_path}/{sim_file_name}"))->Get("SimulatedTree"))->MakeClass();'""",file=batch_file)
+root -l -q -b -e '((TTree*)(new TFile("{self.data_path}/{sim_file_name}"))->Get("SimulatedTree"))->MakeClass("ASimulatedTree");'""",file=batch_file)
         print(f"""
 {macros1}
 {macro_for_sim} -- \\"{self.data_path}/{sim_file_name}\\"
@@ -424,3 +436,26 @@ rm -f {self.input_path}/*.reaction
 rm -f {self.input_path}/*.detector
 rm -f {self.input_path}/geant4*.mac
 rm -f clean.sh""", file=cleaner_file)
+
+        rootlogon_file_name = "rootlogon.C"
+        print("-- creating", rootlogon_file_name)
+        rootlogon_file = open(rootlogon_file_name,'w')
+        print("""{
+    TString message = "libs: ";
+    TString libName = TString(gSystem->Getenv("LILAK_PATH"))+"/build/libLILAK";
+    bool libFound = (gSystem->Load(libName)==0);
+    if (libFound) {
+        message = message + "LILAK" + " ";
+        gROOT -> ProcessLine("#include \\"LKCompiled.h\\"");
+    }
+    else cout << "Error while loading " << libName << endl;
+
+    for (auto name : {"NPCore","NPPhysics","NPSTARK","NPATOMX"})
+    {
+        libName = TString(gSystem->Getenv("NPLib_DIR"))+"/lib/lib"+name;
+        libFound = (gSystem->Load(libName)==0);
+        if (libFound) message = message + name + " ";
+        else cout << "Error while loading " << libName << endl;
+    }
+    cout << message << endl;
+}""", file=rootlogon_file)
