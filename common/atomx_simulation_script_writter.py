@@ -4,18 +4,19 @@ import numpy as np
 
 class atomx_simulation_script_writter:
     """
-    def set_path(self, input_path="input", data_path="data", figures_path="figures", exist_ok=True)
-    def make_script(self, detector_file_name, reaction_file_name, macro_for_sim="#", macro_for_ana="#")
-    def make_detector_file(self, detector_file_name="", make_gas=True, make_si_side=True, make_si_downstream=True, make_si_corner=True, make_si_bottom=True, make_csi=True):
-    def make_eventgen_file_beam(self, beam_particle, energy, eventgen_name="", z_emission=-1000, sigma_energy=0, sigma_theta=0, sigma_x=0, sigma_y=0):
-    def make_eventgen_file_isotropic(self, particle_name, energy1, energy2, angle1, angle2, z0=0, sz=0, eventgen_name)
-    def make_cs_file_gaus(self, mean, sigma)
-    def make_cs_file_from_data(self, cs_file_name, angle1, angle2)
-    def add_eventgen_elastic(self, reaction_file, beam_particle, target, heavy, light, ex_energy_light, ex_energy_heavy, cs_file_name = "flat.txt"):
-    def add_eventgen_decay  (self, reaction_file, threshold=7.65, daughters=["4He","4He","4He"], ex_energies=[0,0,0], branching_ratio=1, life_time=0, shoot=[1,1,1]):
-    def make_geant4_vis_file(self)
-    def make_project_configuration(self)
-    """
+# List of methods
+- def set_path(self, input_path="input", data_path="data", figures_path="figures", exist_ok=True)
+- def make_script(self, detector_file_name, reaction_file_name, macro_for_sim="#", macro_for_ana="#")
+- def make_detector_file(self, detector_file_name="", make_gas=True, make_si_side=True, make_si_downstream=True, make_si_corner=True, make_si_bottom=True, make_csi=True):
+- def make_eventgen_file_beam(self, beam_particle, energy, eventgen_name="", z_emission=-1000, sigma_energy=0, sigma_theta=0, sigma_x=0, sigma_y=0):
+- def make_eventgen_file_isotropic(self, particle_name, energy1, energy2, angle1, angle2, z0=0, sz=0, eventgen_name)
+- def make_cs_file_gaus(self, mean, sigma)
+- def make_cs_file_from_data(self, cs_file_name, angle1, angle2)
+- def add_eventgen_elastic(self, reaction_file, beam_particle, target, heavy, light, ex_energy_light, ex_energy_heavy, cs_file_name = "flat.txt"):
+- def add_eventgen_decay  (self, reaction_file, threshold=7.65, daughters=["4He","4He","4He"], ex_energies=[0,0,0], branching_ratio=1, life_time=0, shoot=[1,1,1]):
+- def make_geant4_vis_file(self)
+- def make_project_configuration(self)
+"""
 
     def __init__(self, name):
         self.input_path = "input"
@@ -28,24 +29,23 @@ class atomx_simulation_script_writter:
         self.data_path = data_path   
         self.figures_path = figures_path
 
-        if data_path.find("/")>=0: 
-            if os.path.islink("data") or os.path.exists("data"): os.remove("data")
-            os.symlink(data_path, "data")
-        else:
-            os.makedirs(data_path, exist_ok=True)
-
-        if input_path.find("/")>=0: 
-            if os.path.islink("input") or os.path.exists("input"): os.remove("input")
-            os.symlink(input_path, "input")
-        else:
-            os.makedirs(input_path, exist_ok=True)
-
-        if figures_path.find("/")>=0: 
-            if os.path.islink("figures") or os.path.exists("figures"): os.remove("figures")
-            os.symlink(figures_path, "figures")
-        else:
-            os.makedirs(figures_path, exist_ok=True)
-
+        for key, link_path in [['data',data_path],['input',input_path],['figures',figures_path]]:
+            key_exist = os.path.exists(key)
+            key_isdir = os.path.isdir(key)
+            key_islink = os.path.islink(key)
+            key_wblink = (link_path.find('/')>=0)
+            if key_exist and key_isdir and key_islink==False:
+                print(f'!! "{key}" is a directory! Remove it manually and run the script again (if you have to)')
+            else:
+                if key_exist and key_islink:
+                    print(f'-- removing link {key}')
+                    os.remove(key)
+                if key_wblink:
+                    print(f'-- creating symbolic link {link_path} to {key}')
+                    os.symlink(link_path, key)
+                else:
+                    print(f'-- creating directory {data_path}')
+                    os.makedirs(data_path, exist_ok=True)
 
     def make_detector_file(self, detector_file_name="", reaction_z=[], step_limit=0.5, make_gas=True, make_si_side=True, make_si_downstream=True, make_si_corner=True, make_si_bottom=True, make_csi=True):
         box_size = [480, 450, 480]
@@ -148,7 +148,7 @@ class atomx_simulation_script_writter:
 
         if len(detector_file_name)==0:
             detector_file_name = f"{self.input_path}/{self.project_name}.detector"
-        print(detector_file_name)
+        print("-- creating", detector_file_name)
         detector_file = open(detector_file_name,"w")
         print(f"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detector file {detector_file_name} ({self.project_name})
@@ -195,7 +195,7 @@ STARK
 
     def make_cs_file_gaus(self, mean, sigma):
         cs_file_name = f"{self.input_path}/gaus_{mean}_{sigma}.txt"
-        print(cs_file_name)
+        print("-- creating", cs_file_name)
         cs_file = open(cs_file_name,'w')
         for i in range(0, 1800):
             x = i/10
@@ -208,7 +208,7 @@ STARK
         cs_file = open(cs_file_name)
         file0 = open(cs_file_name)
         cs_file_name1 = f'{cs_file_name[:cs_file_name.rfind(".")]}_{angle1}_{angle2}{cs_file_name[cs_file_name.rfind("."):]}'
-        print(cs_file_name1)
+        print("-- creating", cs_file_name1)
         file1 = open(cs_file_name1,'w')
         for line in file0:
             theta, value = line.split()
@@ -223,7 +223,7 @@ STARK
         if eventgen_name.endswith(".reaction")==False: eventgen_name = f"{eventgen_name}.reaction"
         if eventgen_name.startswith(f"{self.input_path}/")==False: eventgen_name = f"{self.input_path}/{eventgen_name}"
         reaction_file = open(eventgen_name,'w')
-        print(eventgen_name)
+        print("-- creating", eventgen_name)
         content = f"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Event generator for {eventgen_name} ({self.project_name})
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -278,7 +278,7 @@ Decay 12C
         if eventgen_name.endswith(".reaction")==False: eventgen_name = f"{eventgen_name}.reaction"
         if eventgen_name.startswith(f"{self.input_path}/")==False: eventgen_name = f"{self.input_path}/{eventgen_name}"
         reaction_file = open(eventgen_name,'w')
-        print(eventgen_name)
+        print("-- creating", eventgen_name)
         content = f"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Isotropic event generator {eventgen_name} ({self.project_name})
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -311,8 +311,8 @@ Isotropic
         viewer_file = open(viewer_file_name,'w')
         os.chmod(batch_file_name, 0o755)
         os.chmod(viewer_file_name, 0o755)
-        print(batch_file_name)
-        print(viewer_file_name)
+        print("-- creating", batch_file_name)
+        print("-- creating", viewer_file_name)
         content = f"#!/bin/bash\n"
         print(content, file=batch_file)
         print(content, file=viewer_file)
@@ -334,7 +334,7 @@ npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}
 
     def make_geant4_vis_file(self):
         geant4_vis_file_name = f"{self.input_path}/geant4_vis.mac"
-        print(geant4_vis_file_name)
+        print("-- creating", geant4_vis_file_name)
         geant4_vis_file = open(geant4_vis_file_name,'w')
         print(f"""/vis/open OGL 600x600-0+0
 /vis/scene/add/axes 0 0 0 100 mm
@@ -360,7 +360,7 @@ npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}
 
     def make_project_configuration(self):
         proj_config_file_name = "project.config"
-        print(proj_config_file_name)
+        print("-- creating", proj_config_file_name)
         proj_config_file = open(proj_config_file_name,'w')
         print(f"""Project {self.project_name}
     AnalysisOutput   = {self.data_path}
@@ -371,7 +371,7 @@ npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}
     %Cuts""",file=proj_config_file)
 
         physics_list_file_name = "PhysicsListOption.txt"
-        print(physics_list_file_name)
+        print("-- creating", physics_list_file_name)
         physics_list_file = open(physics_list_file_name,'w')
         print(f"""EmPhysicsList                   Option4 % INCLXX_EM Option1 Option2 Option3 Option4 Standard Livermore Penelope
 
@@ -404,7 +404,7 @@ ShieldingLEND                   0
 %LevelData                       #Z A File""", file=physics_list_file)
 
         cleaner_file_name = "clean.sh"
-        print(cleaner_file_name)
+        print("-- creating", cleaner_file_name)
         cleaner_file = open(cleaner_file_name,'w')
         print(f"""set -x
 rm -f batch_*.sh
