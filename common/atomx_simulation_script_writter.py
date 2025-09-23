@@ -303,8 +303,10 @@ Isotropic
         print(content, file=reaction_file)
         return reaction_file
 
-    def make_script(self, detector_file_name, reaction_file_name, run_name="", nbeams=1000, macro_for_sim="#", macro_for_ana="#"):
+    def make_script(self, detector_file_name, reaction_file_name, run_name="", nbeams=1000, macros1="#", macros2="#", macro_for_sim="#", macro_for_ana="#", run_make_class_tree=False):
         if len(run_name)==0: run_name = self.project_name
+        if type(macros1)==list: macros1 = '\n'.join(macros1)
+        if type(macros2)==list: macros2 = '\n'.join(macros2)
         batch_file_name = f"batch_{run_name}.sh"
         viewer_file_name = f"viewer_{run_name}.sh"
         batch_file = open(batch_file_name,'w')
@@ -321,15 +323,22 @@ Isotropic
         vwr_file_name = f"{run_name}.viewer.root"
         content_b = f"""tee > {self.input_path}/geant4_batch.mac <<EOF
 /run/beamOn {nbeams}
-EOF\n
+EOF
+
 npsimulation --record-track -D {detector_file_name} -E {reaction_file_name} -O {sim_file_name} -B {self.input_path}/geant4_batch.mac
-npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}
-{macro_for_sim} -- \\"{self.data_path}/{sim_file_name}\\"
-{macro_for_ana} -- \\"{self.data_path}/{ana_file_name}\\"
-"""
+npanalysis -T {self.data_path}/{sim_file_name} SimulatedTree -O {ana_file_name}"""
         content_v = f"""npsimulation -D {detector_file_name} -E {reaction_file_name} -O {vwr_file_name} -M {self.input_path}/geant4_vis.mac"""
         print(content_b, file=batch_file)
         print(content_v, file=viewer_file)
+        if run_make_class_tree:
+            print(f"""
+echo root -l -q -b -e '((TTree*)(new TFile("{self.data_path}/{sim_file_name}"))->Get("SimulatedTree"))->MakeClass();'
+root -l -q -b -e '((TTree*)(new TFile("{self.data_path}/{sim_file_name}"))->Get("SimulatedTree"))->MakeClass();'""",file=batch_file)
+        print(f"""
+{macros1}
+{macro_for_sim} -- \\"{self.data_path}/{sim_file_name}\\"
+{macro_for_ana} -- \\"{self.data_path}/{ana_file_name}\\"
+{macros2}""",file=batch_file)
         return batch_file, viewer_file
 
     def make_geant4_vis_file(self):

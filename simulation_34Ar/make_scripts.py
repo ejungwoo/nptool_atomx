@@ -16,4 +16,4 @@ if __name__ == "__main__":
     reaction = a.make_eventgen_file_beam(beam_particle="34Ar", energy=81.6)
     a.add_eventgen_elastic(reaction, beam_particle="34Ar", target="4He", heavy="37K", light="1H")
 
-    a.make_script(detector.name, reaction.name)
+    a.make_script(detector.name, reaction.name, run_make_class_tree=True, macro_for_sim="root read_simulation.C")
