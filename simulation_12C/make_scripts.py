@@ -4,11 +4,15 @@ import os
 sys.path.append("../common")
 from atomx_simulation_script_writter import atomx_simulation_script_writter
 
+path_to_data = "data"
+path_to_figures = "figures"
+path_to_input = "input"
+
 if __name__ == "__main__":
     #print(atomx_simulation_script_writter.__doc__)
 
     a = atomx_simulation_script_writter("ATOMX_12C")
-    a.set_path("/mnt/nptool/atomx/data", "input", "/mnt/nptool/atomx/figures")
+    a.set_path(path_to_data, path_to_input, path_to_figures)
     a.make_project_configuration()
     a.make_geant4_vis_file()
 

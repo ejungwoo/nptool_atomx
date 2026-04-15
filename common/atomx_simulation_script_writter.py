@@ -26,16 +26,16 @@ class atomx_simulation_script_writter:
         self.project_name = name
 
     def set_path(self, data_path="data", input_path="input", figures_path="figures"):
-        self.input_path = input_path  
-        self.data_path = data_path   
+        self.input_path = input_path
+        self.data_path = data_path
         self.figures_path = figures_path
 
-        for key, link_path in [['data',data_path],['input',input_path],['figures',figures_path]]:
-            key_exist = os.path.exists(key)
-            key_isdir = os.path.isdir(key)
+        for key, link_path in [['data', data_path], ['input', input_path], ['figures', figures_path]]:
+            key_exist  = os.path.exists(key)
+            key_isdir  = os.path.isdir(key)
             key_islink = os.path.islink(key)
-            key_wblink = (link_path.find('/')>=0)
-            if key_exist and key_isdir and key_islink==False:
+            key_wblink = (link_path.find('/') >= 0)
+            if key_exist and key_isdir and (key_islink == False):
                 print(f'!! "{key}" is a directory! Remove it manually and run the script again (if you have to)')
             else:
                 if key_exist and key_islink:
@@ -45,8 +45,9 @@ class atomx_simulation_script_writter:
                     print(f'-- creating symbolic link {link_path} to {key}')
                     os.symlink(link_path, key)
                 else:
-                    print(f'-- creating directory {data_path}')
-                    os.makedirs(data_path, exist_ok=True)
+                    print(f'-- creating directory {key}')
+                    os.makedirs(key, exist_ok=True)
+
 
     def make_detector_file(self, detector_file_name="", reaction_z=[], step_limit=0.5, make_gas=True, make_si_side=True, make_si_downstream=True, make_si_corner=True, make_si_bottom=True, make_csi=True):
         box_size = [480, 450, 480]
